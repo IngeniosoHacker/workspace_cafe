@@ -14,10 +14,10 @@ CREATE TABLE IF NOT EXISTS inventario(
 	id serial PRIMARY KEY,
 	producto varchar(50),
 	existencia int not null,
+	unidad varchar(10),
 	caducidad date not null,
 	sede_id int REFERENCES sede(id)
 );
-
 
 CREATE TABLE IF NOT EXISTS receta(
 	menuid int REFERENCES menu(id),
@@ -74,4 +74,3 @@ CREATE TABLE IF NOT EXISTS bitacora(
 	detalle varchar(120),
 	personal_id int not null
 );
-
