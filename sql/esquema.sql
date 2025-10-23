@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS cliente(
 	nombre varchar(120) not null,
 	telefono bigint,
 	platoFav int,
-	suscripcion varchar(50),
+	suscripcion varchar(50) CKECK (suscripcion IN ('Básica', 'Silver', 'Gold')),
 	FOREIGN KEY (platoFav) REFERENCES menu(id)
 );
 
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS reserva(
 	id serial PRIMARY KEY,
 	horaFecha timestamp DEFAULT NOW(),
 	numPersonas int not null,
-	status varchar(20),
+	status varchar(20) CHECK (status IN ('Activa', 'Cancelada', 'Completada')) DEFAULT 'Activa',
 	espacio_fk int REFERENCES espacio(id),
 	sede_fk int REFERENCES sede(id),
 	cliente_fk int REFERENCES cliente(id),
