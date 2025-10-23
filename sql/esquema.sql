@@ -29,11 +29,12 @@ CREATE TABLE IF NOT EXISTS receta(
 );
 
 CREATE TABLE IF NOT EXISTS cliente(
-	id serial PRIMARY KEY,
+	id serial UNIQUE,
 	nombre varchar(120) not null,
 	telefono bigint,
 	platoFav int,
-	suscripcion varchar(50) CKECK (suscripcion IN ('Básica', 'Silver', 'Gold')),
+	suscripcion varchar(50) CHECK (suscripcion IN ('Básica', 'Silver', 'Gold')),
+	PRIMARY KEY (nombre, telefono),
 	FOREIGN KEY (platoFav) REFERENCES menu(id)
 );
 
