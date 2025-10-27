@@ -80,3 +80,127 @@ CREATE TRIGGER trg_validar_disponibilidad
 BEFORE INSERT ON reserva
 FOR EACH ROW
 EXECUTE FUNCTION validar_dispo();
+
+
+-- Bitácora automática de cambios en tablas operativas.
+CREATE OR REPLACE FUNCTION fn_registro_bitacora()
+RETURNS trigger AS
+$$
+DECLARE
+    v_json jsonb;
+    v_id_text text;
+    v_id int := 0;
+    v_personal_text text;
+    v_personal int := 0;
+    v_detalle text;
+    v_context_personal text;
+BEGIN
+    IF TG_TABLE_NAME = 'bitacora' THEN
+        RETURN NULL;
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN
+        v_json := to_jsonb(OLD);
+    ELSE
+        v_json := to_jsonb(NEW);
+    END IF;
+
+    v_id_text := COALESCE(
+        v_json ->> 'id',
+        v_json ->> 'reservaid',
+        v_json ->> 'menuid',
+        v_json ->> 'inventid',
+        v_json ->> 'cliente_fk',
+        v_json ->> 'personal_fk'
+    );
+
+    IF v_id_text IS NOT NULL AND v_id_text ~ '^\d+$' THEN
+        v_id := v_id_text::int;
+    END IF;
+
+    v_personal_text := COALESCE(
+        v_json ->> 'personal_fk',
+        v_json ->> 'personal_id',
+        NULL
+    );
+
+    v_context_personal := current_setting('app.current_personal_id', true);
+
+    IF (v_personal_text IS NULL OR v_personal_text = '') AND v_context_personal IS NOT NULL AND v_context_personal <> '' THEN
+        v_personal_text := v_context_personal;
+    END IF;
+
+    IF v_personal_text IS NOT NULL AND v_personal_text ~ '^\d+$' THEN
+        v_personal := v_personal_text::int;
+    END IF;
+
+    v_detalle := left(v_json::text, 120);
+
+    INSERT INTO bitacora(esquema, id_afectado, operacion, detalle, personal_id)
+    VALUES (
+        format('%I.%I', TG_TABLE_SCHEMA, TG_TABLE_NAME),
+        v_id,
+        TG_OP,
+        v_detalle,
+        v_personal
+    );
+
+    RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+DROP TRIGGER IF EXISTS trg_bitacora_menu ON menu;
+CREATE TRIGGER trg_bitacora_menu
+AFTER INSERT OR UPDATE OR DELETE ON menu
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_sede ON sede;
+CREATE TRIGGER trg_bitacora_sede
+AFTER INSERT OR UPDATE OR DELETE ON sede
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_inventario ON inventario;
+CREATE TRIGGER trg_bitacora_inventario
+AFTER INSERT OR UPDATE OR DELETE ON inventario
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_receta ON receta;
+CREATE TRIGGER trg_bitacora_receta
+AFTER INSERT OR UPDATE OR DELETE ON receta
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_cliente ON cliente;
+CREATE TRIGGER trg_bitacora_cliente
+AFTER INSERT OR UPDATE OR DELETE ON cliente
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_espacio ON espacio;
+CREATE TRIGGER trg_bitacora_espacio
+AFTER INSERT OR UPDATE OR DELETE ON espacio
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_personal ON personal;
+CREATE TRIGGER trg_bitacora_personal
+AFTER INSERT OR UPDATE OR DELETE ON personal
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_reserva ON reserva;
+CREATE TRIGGER trg_bitacora_reserva
+AFTER INSERT OR UPDATE OR DELETE ON reserva
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
+
+DROP TRIGGER IF EXISTS trg_bitacora_pide ON pide;
+CREATE TRIGGER trg_bitacora_pide
+AFTER INSERT OR UPDATE OR DELETE ON pide
+FOR EACH ROW
+EXECUTE FUNCTION fn_registro_bitacora();
