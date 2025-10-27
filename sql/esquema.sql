@@ -58,11 +58,12 @@ CREATE TABLE IF NOT EXISTS reserva(
 	id serial PRIMARY KEY,
 	horaFecha timestamp DEFAULT NOW(),
 	numPersonas int not null,
-	status varchar(20) CHECK (status IN ('Activa', 'Cancelada', 'Completada')) DEFAULT 'Activa',
+	status varchar(20) CHECK (status IN ('Activa', 'Cancelada', 'Completada')) DEFAULT 'Completada',
 	espacio_fk int REFERENCES espacio(id),
 	sede_fk int REFERENCES sede(id),
 	cliente_fk int REFERENCES cliente(id),
-	personal_fk int REFERENCES personal(id)
+	personal_fk int REFERENCES personal(id),
+	observaciones varchar(200)
 );
 
 CREATE TABLE IF NOT EXISTS pide(
