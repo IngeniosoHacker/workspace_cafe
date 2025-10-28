@@ -274,3 +274,34 @@ $$
 $$
 LANGUAGE sql
 STABLE;
+
+
+-- Consulta parametrizable de la bitácora.
+CREATE OR REPLACE FUNCTION bitacora_listar(p_limite int DEFAULT 20)
+RETURNS TABLE (
+    id int,
+    esquema varchar,
+    id_afectado int,
+    operacion varchar,
+    fecha timestamp,
+    detalle varchar,
+    personal_id int
+) AS
+$$
+    SELECT b.id,
+           b.esquema,
+           b.id_afectado,
+           b.operacion,
+           b.fecha,
+           b.detalle,
+           b.personal_id
+      FROM bitacora b
+     ORDER BY b.fecha DESC
+     LIMIT CASE
+               WHEN p_limite IS NULL OR p_limite <= 0 THEN 20
+               WHEN p_limite > 200 THEN 200
+               ELSE p_limite
+           END;
+$$
+LANGUAGE sql
+STABLE;

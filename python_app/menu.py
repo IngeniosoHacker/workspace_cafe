@@ -3,6 +3,8 @@
 
 from database import DatabaseConnection
 import sys
+import os
+from datetime import datetime
 
 
 class Menu:
@@ -20,7 +22,7 @@ class Menu:
     
     def display_menu(self):
         """Display the main menu options."""
-        print("\n" + "="*50)
+        print("="*50)
         print("SISTEMA DE GESTIÓN DE RESTAURANTE")
         print("="*50)
         print(f"Usuario: {self.user_data['name']} | Rol: {self.user_data['role']}")
@@ -29,7 +31,8 @@ class Menu:
         print("2. Gestionar Inventario")
         print("3. Ver Historial de Clientes")
         print("4. Generar Reportes")
-        print("5. Cerrar Programa")
+        print("5. Ver Bitácora de Cambios")
+        print("6. Cerrar Programa")
         print("="*50)
     
     def get_menu_choice(self):
@@ -37,45 +40,62 @@ class Menu:
         Get and validate user menu choice.
         
         Returns:
-            int: User's menu choice (1-5)
+            int: User's menu choice (1-6)
         """
         while True:
             try:
-                choice = int(input("Seleccione una opción (1-5): "))
-                if 1 <= choice <= 5:
+                choice = int(input("Seleccione una opción (1-6): "))
+                if 1 <= choice <= 6:
                     return choice
                 else:
-                    print("Opción inválida. Por favor seleccione un número entre 1 y 5.")
+                    print("Opción inválida. Por favor seleccione un número entre 1 y 6.")
             except ValueError:
                 print("Entrada inválida. Por favor ingrese un número.")
+
+    @staticmethod
+    def clear_console():
+        """Clear the terminal screen in a cross-platform way."""
+        os.system("cls" if os.name == "nt" else "clear")
+
+    @staticmethod
+    def pause():
+        """Wait for user confirmation before continuing."""
+        input("\nPresione Enter para continuar...")
     
     def handle_reservation_management(self):
         """Handle reservation management operations."""
-        print("\n--- GESTIÓN DE RESERVACIONES ---")
-        print("1. Crear nueva reservación")
-        print("2. Buscar reservaciones")
-        print("3. Cancelar reservación")
-        print("4. Volver al menú principal")
-        
         while True:
+            self.clear_console()
+            print("\n--- GESTIÓN DE RESERVACIONES ---")
+            print("1. Crear nueva reservación")
+            print("2. Buscar reservaciones")
+            print("3. Cancelar reservación")
+            print("4. Volver al menú principal")
+            
             try:
                 choice = int(input("Seleccione una opción (1-4): "))
                 
                 if choice == 1:
                     self.create_reservation()
+                    self.pause()
                 elif choice == 2:
                     self.search_reservations()
+                    self.pause()
                 elif choice == 3:
                     self.cancel_reservation()
+                    self.pause()
                 elif choice == 4:
                     break
                 else:
                     print("Opción inválida.")
+                    self.pause()
             except ValueError:
                 print("Entrada inválida. Por favor ingrese un número.")
+                self.pause()
     
     def create_reservation(self):
         """Create a new reservation."""
+        self.clear_console()
         print("\n--- CREAR NUEVA RESERVACIÓN ---")
         
         try:
@@ -156,6 +176,7 @@ class Menu:
     
     def search_reservations(self):
         """Search for reservations using the database function."""
+        self.clear_console()
         print("\n--- BUSCAR RESERVACIONES ---")
         print("Deje en blanco para omitir el filtro:")
         
@@ -204,6 +225,7 @@ class Menu:
     
     def cancel_reservation(self):
         """Cancel a reservation."""
+        self.clear_console()
         print("\n--- CANCELAR RESERVACIÓN ---")
         
         try:
@@ -235,31 +257,38 @@ class Menu:
     
     def handle_inventory_management(self):
         """Handle inventory management operations."""
-        print("\n--- GESTIÓN DE INVENTARIO ---")
-        print("1. Buscar inventario")
-        print("2. Agregar producto al inventario")
-        print("3. Actualizar existencia")
-        print("4. Volver al menú principal")
-        
         while True:
+            self.clear_console()
+            print("\n--- GESTIÓN DE INVENTARIO ---")
+            print("1. Buscar inventario")
+            print("2. Agregar producto al inventario")
+            print("3. Actualizar existencia")
+            print("4. Volver al menú principal")
+            
             try:
                 choice = int(input("Seleccione una opción (1-4): "))
                 
                 if choice == 1:
                     self.search_inventory()
+                    self.pause()
                 elif choice == 2:
                     self.add_inventory_item()
+                    self.pause()
                 elif choice == 3:
                     self.update_inventory()
+                    self.pause()
                 elif choice == 4:
                     break
                 else:
                     print("Opción inválida.")
+                    self.pause()
             except ValueError:
                 print("Entrada inválida. Por favor ingrese un número.")
+                self.pause()
     
     def search_inventory(self):
         """Search inventory using the database function."""
+        self.clear_console()
         print("\n--- BUSCAR INVENTARIO ---")
         
         try:
@@ -297,6 +326,7 @@ class Menu:
     
     def add_inventory_item(self):
         """Add a new item to inventory."""
+        self.clear_console()
         print("\n--- AGREGAR PRODUCTO AL INVENTARIO ---")
         
         try:
@@ -325,6 +355,7 @@ class Menu:
     
     def update_inventory(self):
         """Update inventory quantities."""
+        self.clear_console()
         print("\n--- ACTUALIZAR EXISTENCIA ---")
         
         try:
@@ -362,6 +393,7 @@ class Menu:
     
     def handle_customer_history(self):
         """Handle customer history operations."""
+        self.clear_console()
         print("\n--- HISTORIAL DE CLIENTES ---")
         
         try:
@@ -404,40 +436,51 @@ class Menu:
                 
         except Exception as e:
             print(f"Error al obtener historial de cliente: {e}")
+        finally:
+            self.pause()
     
     def handle_reports(self):
         """Handle report generation operations."""
-        print("\n--- GENERAR REPORTES ---")
-        print("1. Top 10 platillos más vendidos")
-        print("2. Top 10 clientes más frecuentes")
-        print("3. Top 5 clientes con más reservas")
-        print("4. Reporte mensual de inventario")
-        print("5. Resumen de sucursales")
-        print("6. Volver al menú principal")
-        
         while True:
+            self.clear_console()
+            print("\n--- GENERAR REPORTES ---")
+            print("1. Top 10 platillos más vendidos")
+            print("2. Top 10 clientes más frecuentes")
+            print("3. Top 5 clientes con más reservas")
+            print("4. Reporte mensual de inventario")
+            print("5. Resumen de sucursales")
+            print("6. Volver al menú principal")
+            
             try:
                 choice = int(input("Seleccione una opción (1-6): "))
                 
                 if choice == 1:
                     self.top_menu_items()
+                    self.pause()
                 elif choice == 2:
                     self.top_customers()
+                    self.pause()
                 elif choice == 3:
                     self.top_reservation_customers()
+                    self.pause()
                 elif choice == 4:
                     self.monthly_inventory_report()
+                    self.pause()
                 elif choice == 5:
                     self.branch_summary()
+                    self.pause()
                 elif choice == 6:
                     break
                 else:
                     print("Opción inválida.")
+                    self.pause()
             except ValueError:
                 print("Entrada inválida. Por favor ingrese un número.")
+                self.pause()
     
     def top_menu_items(self):
         """Show top 10 most sold menu items."""
+        self.clear_console()
         print("\n--- TOP 10 PLATILLOS MÁS VENDIDOS ---")
         
         try:
@@ -462,6 +505,7 @@ class Menu:
     
     def top_customers(self):
         """Show top 10 most frequent customers."""
+        self.clear_console()
         print("\n--- TOP 10 CLIENTES MÁS FRECUENTES ---")
         
         try:
@@ -486,6 +530,7 @@ class Menu:
     
     def top_reservation_customers(self):
         """Show top 5 customers with most reservations."""
+        self.clear_console()
         print("\n--- TOP 5 CLIENTES CON MÁS RESERVAS ---")
         
         try:
@@ -512,6 +557,7 @@ class Menu:
     
     def monthly_inventory_report(self):
         """Show monthly inventory report."""
+        self.clear_console()
         print("\n--- REPORTE MENSUAL DE INVENTARIO ---")
         
         try:
@@ -542,6 +588,7 @@ class Menu:
     
     def branch_summary(self):
         """Show branch performance summary."""
+        self.clear_console()
         print("\n--- RESUMEN DE SUCURSALES ---")
         
         try:
@@ -569,6 +616,7 @@ class Menu:
     def run(self):
         """Run the main menu loop."""
         while True:
+            self.clear_console()
             self.display_menu()
             choice = self.get_menu_choice()
             
@@ -581,5 +629,46 @@ class Menu:
             elif choice == 4:
                 self.handle_reports()
             elif choice == 5:
+                self.view_bitacora_logs()
+            elif choice == 6:
                 print("Saliendo del programa...")
                 break
+    def view_bitacora_logs(self):
+        """Display recent entries from the audit log."""
+        self.clear_console()
+        print("\n--- BITÁCORA DE CAMBIOS ---")
+
+        try:
+            limit_input = input("¿Cuántos registros desea ver? (default 20): ")
+            limit = int(limit_input) if limit_input.strip() else 20
+            limit = max(1, min(limit, 100))
+
+            query = "SELECT * FROM bitacora_listar(%s);"
+            logs = self.db.fetch_all(query, (limit,))
+
+            if logs:
+                print("{:<5} {:<25} {:<12} {:<12} {:<20} {:<10} {:<40}".format(
+                    "ID", "Esquema", "ID Afectado", "Operación", "Fecha", "Personal", "Detalle"
+                ))
+                print("-" * 130)
+                for entry in logs:
+                    fecha = entry["fecha"]
+                    fecha_text = fecha.strftime("%Y-%m-%d %H:%M") if isinstance(fecha, datetime) else str(fecha)
+                    print("{:<5} {:<25} {:<12} {:<12} {:<20} {:<10} {:<40}".format(
+                        entry["id"],
+                        entry["esquema"][:24],
+                        entry["id_afectado"],
+                        entry["operacion"],
+                        fecha_text,
+                        entry["personal_id"],
+                        (entry["detalle"] or "")[:39],
+                    ))
+            else:
+                print("No hay registros en la bitácora.")
+
+        except ValueError:
+            print("Cantidad inválida. Debe ingresar un número.")
+        except Exception as e:
+            print(f"Error al obtener la bitácora: {e}")
+        finally:
+            self.pause()
