@@ -199,6 +199,71 @@ AFTER INSERT OR UPDATE OR DELETE ON reserva
 FOR EACH ROW
 EXECUTE FUNCTION fn_registro_bitacora();
 
+-- Controla que haya inventario suficiente al registrar pedidos y descuenta ingredientes.
+CREATE OR REPLACE FUNCTION fn_control_inventario_pedido()
+RETURNS trigger AS
+$$
+DECLARE
+    v_sede_id reserva.sede_fk%TYPE;
+    v_invent_id inventario.id%TYPE;
+    v_existencia inventario.existencia%TYPE;
+    rec record;
+BEGIN
+    SELECT sede_fk
+      INTO v_sede_id
+      FROM reserva
+     WHERE id = NEW.reservaid;
+
+    IF v_sede_id IS NULL THEN
+        RAISE EXCEPTION 'No existe la reserva % asociada al pedido.', NEW.reservaid;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM receta WHERE menuid = NEW.menuid) THEN
+        RAISE EXCEPTION 'El platillo % no tiene receta definida.', NEW.menuid;
+    END IF;
+
+    FOR rec IN
+        SELECT i.producto,
+               COUNT(*) AS cantidad
+          FROM receta r
+          JOIN inventario i ON i.id = r.inventid
+         WHERE r.menuid = NEW.menuid
+         GROUP BY i.producto
+    LOOP
+        SELECT id, existencia
+          INTO v_invent_id, v_existencia
+          FROM inventario
+         WHERE producto = rec.producto
+           AND sede_id = v_sede_id
+         ORDER BY caducidad
+         LIMIT 1
+         FOR UPDATE;
+
+        IF v_invent_id IS NULL THEN
+            RAISE EXCEPTION 'No hay inventario disponible del producto % en la sede %.', rec.producto, v_sede_id;
+        END IF;
+
+        IF v_existencia < rec.cantidad THEN
+            RAISE EXCEPTION 'Inventario insuficiente del producto % en la sede % (requiere %, disponible %).',
+                rec.producto, v_sede_id, rec.cantidad, v_existencia;
+        END IF;
+
+        UPDATE inventario
+           SET existencia = existencia - rec.cantidad
+         WHERE id = v_invent_id;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_pide_control_inventario ON pide;
+CREATE TRIGGER trg_pide_control_inventario
+BEFORE INSERT ON pide
+FOR EACH ROW
+EXECUTE FUNCTION fn_control_inventario_pedido();
+
 DROP TRIGGER IF EXISTS trg_bitacora_pide ON pide;
 CREATE TRIGGER trg_bitacora_pide
 AFTER INSERT OR UPDATE OR DELETE ON pide

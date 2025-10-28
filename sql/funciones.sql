@@ -22,6 +22,52 @@ STABLE;
 
 
 -- Búsqueda de reservas por campos opcionales.
+
+-- Inserta un nuevo cliente y devuelve su identificador.
+CREATE OR REPLACE FUNCTION agregar_cliente(
+    p_nombre varchar,
+    p_telefono bigint,
+    p_plato_fav int DEFAULT NULL,
+    p_suscripcion varchar DEFAULT 'Básica'
+)
+RETURNS int AS
+$$
+DECLARE
+    v_cliente_id cliente.id%TYPE;
+BEGIN
+    IF p_nombre IS NULL OR btrim(p_nombre) = '' THEN
+        RAISE EXCEPTION 'El nombre del cliente es obligatorio.';
+    END IF;
+
+    IF p_telefono IS NULL THEN
+        RAISE EXCEPTION 'El teléfono del cliente es obligatorio.';
+    END IF;
+
+    IF p_suscripcion NOT IN ('Básica', 'Silver', 'Gold') THEN
+        RAISE EXCEPTION 'Suscripción inválida: %', p_suscripcion;
+    END IF;
+
+    SELECT id
+      INTO v_cliente_id
+      FROM cliente
+     WHERE nombre = p_nombre
+       AND telefono = p_telefono
+     LIMIT 1;
+
+    IF v_cliente_id IS NOT NULL THEN
+        RETURN v_cliente_id;
+    END IF;
+
+    INSERT INTO cliente (nombre, telefono, platoFav, suscripcion)
+    VALUES (p_nombre, p_telefono, p_plato_fav, p_suscripcion)
+    RETURNING id INTO v_cliente_id;
+
+    RETURN v_cliente_id;
+END;
+$$
+LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION buscar_reservas(
     p_reserva_id int DEFAULT NULL,
     p_hora timestamp DEFAULT NULL,
@@ -61,6 +107,40 @@ END;
 $$
 LANGUAGE plpgsql
 STABLE;
+
+-- Registra un platillo solicitado para una reserva.
+CREATE OR REPLACE FUNCTION realizar_pedido(
+    p_reserva_id int,
+    p_menu_id int
+)
+RETURNS void AS
+$$
+DECLARE
+    v_dummy int;
+BEGIN
+    IF p_reserva_id IS NULL THEN
+        RAISE EXCEPTION 'La reserva es obligatoria.';
+    END IF;
+
+    IF p_menu_id IS NULL THEN
+        RAISE EXCEPTION 'El platillo es obligatorio.';
+    END IF;
+
+    SELECT 1 INTO v_dummy FROM reserva WHERE id = p_reserva_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'La reserva % no existe.', p_reserva_id;
+    END IF;
+
+    SELECT 1 INTO v_dummy FROM menu WHERE id = p_menu_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'El platillo % no existe.', p_menu_id;
+    END IF;
+
+    INSERT INTO pide (reservaid, menuid)
+    VALUES (p_reserva_id, p_menu_id);
+END;
+$$
+LANGUAGE plpgsql;
 
 
 -- Top 10 de platillos más vendidos según la tabla pide.

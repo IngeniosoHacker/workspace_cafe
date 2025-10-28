@@ -29,10 +29,12 @@ class Menu:
         print("="*50)
         print("1. Gestionar Reservaciones")
         print("2. Gestionar Inventario")
-        print("3. Ver Historial de Clientes")
-        print("4. Generar Reportes")
-        print("5. Ver Bitácora de Cambios")
-        print("6. Cerrar Programa")
+        print("3. Registrar Nuevo Cliente")
+        print("4. Registrar Pedido")
+        print("5. Ver Historial de Clientes")
+        print("6. Generar Reportes")
+        print("7. Ver Bitácora de Cambios")
+        print("8. Cerrar Programa")
         print("="*50)
     
     def get_menu_choice(self):
@@ -40,15 +42,15 @@ class Menu:
         Get and validate user menu choice.
         
         Returns:
-            int: User's menu choice (1-6)
+            int: User's menu choice (1-8)
         """
         while True:
             try:
-                choice = int(input("Seleccione una opción (1-6): "))
-                if 1 <= choice <= 6:
+                choice = int(input("Seleccione una opción (1-8): "))
+                if 1 <= choice <= 8:
                     return choice
                 else:
-                    print("Opción inválida. Por favor seleccione un número entre 1 y 6.")
+                    print("Opción inválida. Por favor seleccione un número entre 1 y 8.")
             except ValueError:
                 print("Entrada inválida. Por favor ingrese un número.")
 
@@ -61,6 +63,99 @@ class Menu:
     def pause():
         """Wait for user confirmation before continuing."""
         input("\nPresione Enter para continuar...")
+
+    def _safe_rollback(self):
+        """Rollback current transaction, ignoring errors if none active."""
+        try:
+            self.db.connection.rollback()
+        except Exception:
+            pass
+
+    def register_new_client(self):
+        """Register a new client using the database function."""
+        self.clear_console()
+        print("\n--- REGISTRO DE NUEVO CLIENTE ---")
+
+        try:
+            name = input("Nombre completo: ").strip()
+            if not name:
+                print("El nombre es obligatorio.")
+                return
+
+            phone_raw = input("Teléfono (solo números): ").strip()
+            if not phone_raw or not phone_raw.isdigit():
+                print("El teléfono debe contener solo números.")
+                return
+            phone = int(phone_raw)
+
+            favorite_raw = input("ID de platillo favorito (opcional): ").strip()
+            favorite_id = int(favorite_raw) if favorite_raw else None
+
+            print("\nTipos de suscripción disponibles: Básica, Silver, Gold")
+            subscription_input = input("Tipo de suscripción (default Básica): ").strip()
+            if not subscription_input:
+                subscription = 'Básica'
+            else:
+                normalized = subscription_input.lower()
+                subscription_map = {
+                    'basica': 'Básica',
+                    'básica': 'Básica',
+                    'silver': 'Silver',
+                    'gold': 'Gold'
+                }
+                subscription = subscription_map.get(normalized)
+                if not subscription:
+                    print("Suscripción inválida. Debe ser Básica, Silver o Gold.")
+                    return
+
+            query = "SELECT agregar_cliente(%s, %s, %s, %s);"
+            result = self.db.fetch_one(query, (name, phone, favorite_id, subscription))
+
+            if result and result[0]:
+                self.db.connection.commit()
+                print(f"Cliente registrado correctamente con ID: {result[0]}")
+            else:
+                self._safe_rollback()
+                print("No se pudo registrar al cliente.")
+
+        except ValueError:
+            self._safe_rollback()
+            print("Datos inválidos. Por favor verifique la información ingresada.")
+        except Exception as e:
+            self._safe_rollback()
+            print(f"Error al registrar cliente: {e}")
+        finally:
+            self.pause()
+
+    def register_order(self):
+        """Register a new order for a reservation."""
+        self.clear_console()
+        print("\n--- REGISTRO DE PEDIDO ---")
+
+        try:
+            reservation_input = input("ID de la reservación: ").strip()
+            menu_input = input("ID del platillo del menú: ").strip()
+
+            reservation_id = int(reservation_input)
+            menu_id = int(menu_input)
+
+            result = self.db.fetch_one("SELECT realizar_pedido(%s, %s);", (reservation_id, menu_id))
+
+            if result is not None:
+                self.db.connection.commit()
+                print("Pedido registrado correctamente.")
+            else:
+                self._safe_rollback()
+                print("No se pudo registrar el pedido.")
+
+        except ValueError:
+            self._safe_rollback()
+            print("Los identificadores deben ser números enteros.")
+        except Exception as e:
+            self._safe_rollback()
+            print(f"Error al registrar el pedido: {e}")
+        finally:
+            self.pause()
     
     def handle_reservation_management(self):
         """Handle reservation management operations."""
@@ -625,14 +720,19 @@ class Menu:
             elif choice == 2:
                 self.handle_inventory_management()
             elif choice == 3:
-                self.handle_customer_history()
+                self.register_new_client()
             elif choice == 4:
-                self.handle_reports()
+                self.register_order()
             elif choice == 5:
-                self.view_bitacora_logs()
+                self.handle_customer_history()
             elif choice == 6:
+                self.handle_reports()
+            elif choice == 7:
+                self.view_bitacora_logs()
+            elif choice == 8:
                 print("Saliendo del programa...")
                 break
+
     def view_bitacora_logs(self):
         """Display recent entries from the audit log."""
         self.clear_console()
