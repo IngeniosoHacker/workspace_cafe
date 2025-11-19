@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS fact_orders (
+    order_sk SERIAL PRIMARY KEY,
+    order_id BIGINT,
+    restaurant_sk INT,
+    customer_sk INT,
+    item_count INT,
+    subtotal NUMERIC(10,2),
+    packaging_charges NUMERIC(10,2),
+    discount NUMERIC(10,2),
+    total NUMERIC(10,2),
+    rating NUMERIC(3,2),
+    distance_km NUMERIC(5,2),
+    delivery_type VARCHAR(50),
+    order_status VARCHAR(50),
+    kpt_minutes NUMERIC(5,2),
+    rider_wait_minutes NUMERIC(5,2),
+    date_sk INT,
+    FOREIGN KEY (restaurant_sk) REFERENCES dim_restaurant(restaurant_sk),
+    FOREIGN KEY (customer_sk) REFERENCES dim_customer(customer_sk),
+    FOREIGN KEY (date_sk) REFERENCES dim_date(date_sk)
+);
